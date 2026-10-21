@@ -1,0 +1,121 @@
+// 番茄免费小说补充规则（配合 id667 订阅使用）
+// 设计原则：尽量用文字关键词/结构匹配，不依赖混淆过的 vid，不写死完整文案
+// 开启本订阅后，请在 id667 订阅的番茄规则里关闭以下两组，避免重复点击：
+//   「功能类-看广告自动领奖励」「局部广告-首页右侧悬浮广告」
+// id667 的「功能类-观看广告自动静音」「功能类-误入直播后自动[退出]」可以继续开着
+{
+  id: 1019667,
+  name: '番茄补充规则',
+  version: 2,
+  author: 'local',
+  apps: [
+    {
+      id: 'com.dragon.read',
+      name: '番茄免费小说',
+      groups: [
+        {
+          key: 1,
+          name: '功能类-听书时长不足自动看视频领到上限',
+          desc: '时长不足/用完时自动打开领时长面板并连续看视频，直到按钮消失或达到本次上限；不会点击含「畅听」的特殊奖励',
+          enable: true,
+          rules: [
+            {
+              key: 0,
+              name: '①时长不足-打开领时长面板',
+              actionCd: 5000,
+              // 当天广告看完后面板仍会显示「不足」，限次避免反复点宝箱
+              actionMaximum: 3,
+              resetMatch: 'app',
+              matches: [
+                '[text~="(?s).*(收听|听书).*(不足|用完|用尽|耗尽).*"][visibleToUser=true]',
+                '@[clickable=true] > [text*="领时长"][text.length<10][visibleToUser=true]',
+              ],
+              // 面板已经打开（能看到看视频按钮）时不再点入口，避免误点宝箱
+              excludeMatches: '[text^="看视频"][visibleToUser=true]',
+            },
+            {
+              key: 1,
+              name: '②时长不足-点[看视频领时长]',
+              actionCd: 3000,
+              // 广告加载失败（当前无新视频）时防止死循环
+              actionMaximum: 5,
+              resetMatch: 'app',
+              matches: [
+                '[text~="(?s).*(收听|听书).*(不足|用完|用尽|耗尽).*"][visibleToUser=true]',
+                '[text^="看视频"][text~="(?s).*(时长|分钟|再得).*"][text!*="畅听"][clickable=true][visibleToUser=true]',
+              ],
+            },
+            {
+              key: 2,
+              name: '③看完一个后继续领-直到上限',
+              desc: '只在刚关掉奖励广告之后触发；每次打开番茄最多连续 8 次',
+              preKeys: [10],
+              actionDelay: 1500,
+              actionMaximum: 8,
+              resetMatch: 'app',
+              matches: '[text^="看视频"][text~="(?s).*(时长|分钟|再得).*"][text!*="畅听"][clickable=true][visibleToUser=true]',
+            },
+            {
+              key: 10,
+              name: '广告-奖励已到手-点[关闭]',
+              desc: '右上角描述不再含「秒」即已获得奖励',
+              activityIds: 'com.ss.android.excitingvideo.ExcitingVideoActivity',
+              actionDelay: 800,
+              matches: '@ImageView < [desc*="关闭"][desc!*="秒"]',
+            },
+            {
+              key: 11,
+              name: '广告-误关弹出挽留框-点[继续看]',
+              desc: '挽留框文字是图片，只能按弹窗比例点按钮位置',
+              activityIds: 'com.ss.android.excitingvideo.ExcitingVideoActivity',
+              actionDelay: 500,
+              position: { left: 'width * 0.5', bottom: 'width * 0.3182' },
+              matches: 'ImageView - @ViewGroup[childCount=1][width>600 && height>600][getChild(0).name$="ImageView"] -(1,2) ScrollView',
+            },
+            {
+              key: 12,
+              name: '广告-已无新视频-退出',
+              activityIds: 'com.ss.android.excitingvideo.ExcitingVideoActivity',
+              matches: '@[clickable=true][width<120 && height<120] + LinearLayout > [text*="无新视频"][visibleToUser=true]',
+            },
+          ],
+        },
+        {
+          key: 2,
+          name: '全屏广告-番茄红包弹窗',
+          desc: '关闭「番茄发来的红包/恭喜发财」弹窗',
+          enable: true,
+          rules: [
+            {
+              key: 0,
+              actionDelay: 300,
+              matches: [
+                '[text~="(?s).*(发来的红包|恭喜发财).*"][visibleToUser=true]',
+                '@[desc~="(?i)(close|关闭)"][clickable=true][visibleToUser=true]',
+              ],
+            },
+          ],
+        },
+        {
+          key: 3,
+          name: '局部广告-右侧悬浮红包挂件',
+          desc: '关闭「登录领取/登录赚钱」等悬浮挂件；原订阅规则因关闭按钮被系统报告为不可见而失效',
+          enable: true,
+          rules: [
+            {
+              key: 0,
+              name: '传统View版-关闭按钮在前',
+              matches: '@ImageView[clickable=true][width<100 && height<100] + ViewGroup >n [text~="(?s).*(登录|领取|赚|红包|福利|金币|现金|奖励).*"][text.length<8][visibleToUser=true]',
+            },
+            {
+              key: 1,
+              name: 'Compose版-关闭按钮在后',
+              // Compose 节点取不到父节点，只能用「兄弟 → 子孙」方向匹配
+              matches: '@[desc~="(?i).*(close|关闭).*"][clickable=true] - * >n [text~="(?s).*(登录|领取|赚|红包|福利|金币|现金|奖励).*"][text.length<8][visibleToUser=true]',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+}
