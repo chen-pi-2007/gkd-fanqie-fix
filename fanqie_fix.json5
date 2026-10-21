@@ -2,11 +2,13 @@
 // 设计原则：尽量用文字关键词/结构匹配，不依赖混淆过的 vid，不写死完整文案
 // 开启本订阅后，请在 id667 订阅的番茄规则里关闭以下两组，避免重复点击：
 //   「功能类-看广告自动领奖励」「局部广告-首页右侧悬浮广告」
-// id667 的「功能类-观看广告自动静音」「功能类-误入直播后自动[退出]」可以继续开着
+// id667 的「功能类-观看广告自动静音」请关闭（本订阅自带静音，两个都开会点两次变回有声）
+// id667 的「功能类-误入直播后自动[退出]」可以继续开着
+// 需要较新版本的 GKD（旧版不支持 ~= 正则等语法）
 {
   id: 1019667,
   name: '番茄补充规则',
-  version: 2,
+  version: 3,
   author: 'local',
   apps: [
     {
@@ -58,10 +60,16 @@
             {
               key: 10,
               name: '广告-奖励已到手-点[关闭]',
-              desc: '右上角描述不再含「秒」即已获得奖励',
-              activityIds: 'com.ss.android.excitingvideo.ExcitingVideoActivity',
+              desc: '右上角描述变成「获得xx，关闭」即已获得奖励',
+              // 不限定 activity：不同版本广告页类名可能不同，靠描述文字限定
               actionDelay: 800,
-              matches: '@ImageView < [desc*="关闭"][desc!*="秒"]',
+              anyMatches: [
+                // 从上往下找：部分机型/系统取不到父节点，「子 < 父」写法会失效
+                '[desc*="关闭"][desc!*="秒"][desc~="(?s).*(获得|奖励|领取成功|已领取).*"] > @ImageView',
+                '@ImageView < [desc*="关闭"][desc!*="秒"][desc~="(?s).*(获得|奖励|领取成功|已领取).*"]',
+                // 关闭描述节点本身没有图标子节点时，点它右侧的 ×
+                '@[desc*="关闭"][desc!*="秒"][desc~="(?s).*(获得|奖励|领取成功|已领取).*"][childCount=0][height>20]',
+              ],
             },
             {
               key: 11,
@@ -75,7 +83,6 @@
             {
               key: 12,
               name: '广告-已无新视频-退出',
-              activityIds: 'com.ss.android.excitingvideo.ExcitingVideoActivity',
               matches: '@[clickable=true][width<120 && height<120] + LinearLayout > [text*="无新视频"][visibleToUser=true]',
             },
           ],
@@ -112,6 +119,25 @@
               name: 'Compose版-关闭按钮在后',
               // Compose 节点取不到父节点，只能用「兄弟 → 子孙」方向匹配
               matches: '@[desc~="(?i).*(close|关闭).*"][clickable=true] - * >n [text~="(?s).*(登录|领取|赚|红包|福利|金币|现金|奖励).*"][text.length<8][visibleToUser=true]',
+            },
+          ],
+        },
+        {
+          key: 4,
+          name: '功能类-看广告自动静音',
+          desc: '广告开始时点一次左上角喇叭；与 id667 的「观看广告自动静音」二选一，同时开会点两次变回有声',
+          enable: true,
+          actionDelay: 1000,
+          actionMaximum: 1,
+          resetMatch: 'activity',
+          rules: [
+            {
+              key: 0,
+              // 定位右上角「x秒后可领…/获得…，关闭」那一栏左边的兄弟栏「广告 | 喇叭」，
+              // 喇叭在这一栏最右端；该栏被系统报告为高度 0，只能按栏宽比例推算点击位置
+              // 不用 prev、不往上找父节点，兼容取不到父节点的机型
+              position: { right: 'width * 0.2255', top: 'width * 0.204' },
+              matches: '@ViewGroup[index=0][width>100] + ViewGroup >n [desc*="关闭"][desc~="(?s).*(秒|获得|奖励|时长).*"]',
             },
           ],
         },
