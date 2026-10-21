@@ -4,15 +4,19 @@
 
 ## 订阅地址
 
+国内推荐（gh-proxy 镜像，已在 GKD 实测可订阅）：
+
 ```
-https://cdn.jsdelivr.net/gh/chen-pi-2007/gkd-fanqie-fix@main/fanqie_fix.json5
+https://gh-proxy.com/https://raw.githubusercontent.com/chen-pi-2007/gkd-fanqie-fix/main/fanqie_fix.json5
 ```
 
-备用（GitHub 直链）：
+可直连 GitHub 时：
 
 ```
 https://raw.githubusercontent.com/chen-pi-2007/gkd-fanqie-fix/main/fanqie_fix.json5
 ```
+
+> 国内网络下 jsDelivr 会被重置连接（Connection reset），不建议使用。
 
 ## 包含的规则
 
